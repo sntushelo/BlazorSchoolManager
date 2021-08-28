@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSchoolManager.Client.Infrastructure.Managers
 {
-    public interface ISharedApiService
+    public interface ISharedApiService : IManager
     {
         Task<IResult<int>> DeleteAsync(int id);
         Task<IResult<string>> ExportToExcelAsync(string searchString = "");

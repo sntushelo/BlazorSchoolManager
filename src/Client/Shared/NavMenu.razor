@@ -70,6 +70,16 @@
             @_localizer["Chat"]
         </MudNavLink>
     }
+    @if (_canViewVenues)
+    {
+        <MudNavLink Href="/venues" Icon="@Icons.Material.Outlined.CallToAction">
+            @_localizer["Venues"]
+        </MudNavLink>
+    }
+    
+    <MudNavLink Href="/lessons" Icon="@Icons.Material.Outlined.CallToAction">
+        @_localizer["Lessons"]
+    </MudNavLink>
     @if (_canViewProducts || _canViewBrands)
     {
         <MudListSubheader Class="mt-2 mb-n2">@_localizer["Catalog Management"]</MudListSubheader>
@@ -101,6 +111,7 @@
     private bool _canViewChat;
     private bool _canViewProducts;
     private bool _canViewBrands;
+    private bool _canViewVenues;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -115,5 +126,6 @@
         _canViewChat = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Communication.Chat)).Succeeded;
         _canViewProducts = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Products.View)).Succeeded;
         _canViewBrands = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Brands.View)).Succeeded;
+        _canViewVenues = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Venues.View)).Succeeded;
     }
 }
