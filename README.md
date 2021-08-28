@@ -1,0 +1,2 @@
+# BlazorSchoolManager
+Blazor School Manager
