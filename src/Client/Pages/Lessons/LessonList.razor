@@ -1,0 +1,265 @@
+﻿@page "/lessons"
+@using BlazorSchoolManager.Application.Features.Lessons.Queries;
+@using BlazorSchoolManager.Application.Features.Lessons.Commands;
+@using BlazorSchoolManager.Shared.Constants.Application;
+@using Microsoft.AspNetCore.SignalR.Client;
+@using System.Security.Claims;
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages.Lessons.LessonList> _localizer
+@inject ILessonManager LessonManager
+<style>
+    .mud-table-container {
+        overflow: auto;
+    }
+</style>
+
+@code {
+    [CascadingParameter] private HubConnection HubConnection { get; set; }
+
+    private IEnumerable<GetLessonsResponsePaged> _pagedData;
+    private MudTable<GetLessonsResponsePaged> _table;
+    private int _totalItems;
+    private int _currentPage;
+    private string _searchString = "";
+    private bool _dense = false;
+    private bool _striped = true;
+    private bool _bordered = false;
+
+    private ClaimsPrincipal _currentUser;
+    private bool _canCreateLessons;
+    private bool _canEditLessons;
+    private bool _canDeleteLessons;
+    private bool _canExportLessons;
+    private bool _canSearchLessons;
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUser = await _authenticationManager.CurrentUser();
+        _canCreateLessons = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Lessons.Create)).Succeeded;
+        _canEditLessons = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Lessons.Edit)).Succeeded;
+        _canDeleteLessons = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Lessons.Delete)).Succeeded;
+        _canExportLessons = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Lessons.Export)).Succeeded;
+        _canSearchLessons = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Lessons.Search)).Succeeded;
+
+        _loaded = true;
+        HubConnection = HubConnection.TryInitialize(_navigationManager);
+        if (HubConnection.State == HubConnectionState.Disconnected)
+        {
+            await HubConnection.StartAsync();
+        }
+    }
+
+    private async Task<TableData<GetLessonsResponsePaged>> ServerReload(TableState state)
+    {
+        if (!string.IsNullOrWhiteSpace(_searchString))
+        {
+            state.Page = 0;
+        }
+        await LoadData(state.Page, state.PageSize, state);
+        return new TableData<GetLessonsResponsePaged> { TotalItems = _totalItems, Items = _pagedData };
+    }
+
+    private async Task LoadData(int pageNumber, int pageSize, TableState state)
+    {
+        string[] orderings = null;
+        if (!string.IsNullOrEmpty(state.SortLabel))
+        {
+            orderings = state.SortDirection != SortDirection.None ? new[] { $"{state.SortLabel} {state.SortDirection}" } : new[] { $"{state.SortLabel}" };
+        }
+
+        var request = new GetLessonsRequest { PageSize = pageSize, PageNumber = pageNumber + 1, SearchString = _searchString, Orderby = orderings };
+        var response = await LessonManager.GetAsync(request);
+        if (response.Succeeded)
+        {
+            _totalItems = response.TotalCount;
+            _currentPage = response.CurrentPage;
+            _pagedData = response.Data;
+        }
+        else
+        {
+            foreach (var message in response.Messages)
+            {
+                _snackBar.Add(message, Severity.Error);
+            }
+        }
+    }
+
+    private void OnSearch(string text)
+    {
+        _searchString = text;
+        _table.ReloadServerData();
+    }
+
+    private async Task ExportToExcel()
+    {
+        var response = await LessonManager.ExportToExcelAsync(_searchString);
+        if (response.Succeeded)
+        {
+            await _jsRuntime.InvokeVoidAsync("Download", new
+            {
+                ByteArray = response.Data,
+                FileName = $"{nameof(Lessons).ToLower()}_{DateTime.Now:ddMMyyyyHHmmss}.xlsx",
+                MimeType = ApplicationConstants.MimeTypes.OpenXml
+            });
+            _snackBar.Add(string.IsNullOrWhiteSpace(_searchString)
+                ? _localizer["Lessons exported"]
+                : _localizer["Filtered Lessons exported"], Severity.Success);
+        }
+        else
+        {
+            foreach (var message in response.Messages)
+            {
+                _snackBar.Add(message, Severity.Error);
+            }
+        }
+    }
+
+    private async Task InvokeModal(int id = 0)
+    {
+        var parameters = new DialogParameters();
+        if (id != 0)
+        {
+            var lesson = _pagedData.FirstOrDefault(c => c.Id == id);
+            if (lesson != null)
+            {
+                parameters.Add(nameof(AddEditLessonModal), new AddEditLessonCommand
+                {
+                    Id = lesson.Id,
+                    Name = lesson.Name,
+                    Description = lesson.Description,
+                    StartTime = lesson.StartTime,
+                    EndDate = lesson.EndDate,
+                    TeacherId = lesson.TeacherId,
+                    VenueId = lesson.VenueId
+                });
+            }
+        }
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true, DisableBackdropClick = true };
+        var dialog = _dialogService.Show<AddEditLessonModal>(id == 0 ? _localizer["Create"] : _localizer["Edit"], parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            OnSearch("");
+        }
+    }
+
+    private async Task Delete(int id)
+    {
+        string deleteContent = _localizer["Delete Content"];
+        var parameters = new DialogParameters
+{
+                {nameof(Shared.Dialogs.DeleteConfirmation.ContentText), string.Format(deleteContent, id)}
+            };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true };
+        var dialog = _dialogService.Show<Shared.Dialogs.DeleteConfirmation>(_localizer["Delete"], parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            var response = await LessonManager.DeleteAsync(id);
+            if (response.Succeeded)
+            {
+                OnSearch("");
+                await HubConnection.SendAsync(ApplicationConstants.SignalR.SendUpdateDashboard);
+                _snackBar.Add(response.Messages[0], Severity.Success);
+            }
+            else
+            {
+                OnSearch("");
+                foreach (var message in response.Messages)
+                {
+                    _snackBar.Add(message, Severity.Error);
+                }
+            }
+        }
+    }
+}
+
+<HeroTitle Title="@_localizer["Lessons"]" Description="@_localizer["Manage Lessons."]" />
+@if (!_loaded)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudTable Elevation="25" ServerData="@(new Func<TableState, Task<TableData<GetLessonsResponsePaged>>>(ServerReload))" Hover="true" Dense="@_dense" Bordered="@_bordered" Striped="@_striped" @ref="_table">
+        <ToolBarContent>
+            <div class="justify-center mud-text-align-center">
+                @if (_canCreateLessons)
+                {
+                    <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" @onclick="@(() => InvokeModal(0))" StartIcon="@Icons.Material.Filled.Add" IconColor="Color.Surface">@_localizer["Create"]</MudButton>
+                    <MudButton DisableElevation Variant="Variant.Filled" OnClick="@(() => OnSearch(""))" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Surface" Color="Color.Secondary">@_localizer["Reload"]</MudButton>
+                    @if (_canExportLessons)
+                    {
+                        <MudButton DisableElevation Variant="Variant.Filled" OnClick="ExportToExcel" StartIcon="@Icons.Custom.FileFormats.FileExcel" IconColor="Color.Secondary" Color="Color.Surface" Style="margin-left: 5px;">@_localizer["Export"]</MudButton>
+                    }
+                }
+                else
+                {
+                    <MudButton DisableElevation Variant="Variant.Filled" OnClick="@(() => OnSearch(""))" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Surface" Color="Color.Secondary">@_localizer["Reload"]</MudButton>
+                    @if (_canExportLessons)
+                    {
+                        <MudButton DisableElevation Variant="Variant.Filled" OnClick="ExportToExcel" StartIcon="@Icons.Custom.FileFormats.FileExcel" IconColor="Color.Secondary" Color="Color.Surface" Style="margin-left: 5px;">@_localizer["Export"]</MudButton>
+                    }
+                }
+            </div>
+            <MudToolBarSpacer />
+            @if (_canSearchLessons)
+            {
+                <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="@_localizer["Search"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            }
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel T="GetLessonsResponsePaged" SortLabel="Id">@_localizer["Id"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetLessonsResponsePaged" SortLabel="Name">@_localizer["Name"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetLessonsResponsePaged" SortLabel="Capacity">@_localizer["Capacity"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetLessonsResponsePaged" SortLabel="Description">@_localizer["Description"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetLessonsResponsePaged" SortLabel="IsOnline">@_localizer["IsOnline"]</MudTableSortLabel></MudTh>
+            <MudTh Style="text-align:right">@_localizer["Actions"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Id">@context.Id</MudTd>
+            <MudTd DataLabel="Name">
+                <MudHighlighter Text="@context.Name" HighlightedText="@_searchString" />
+            </MudTd>
+            <MudTd DataLabel="Description">
+                <MudHighlighter Text="@context.Description" HighlightedText="@_searchString" />
+            </MudTd>
+            <MudTd DataLabel="TeacherId">@context.TeacherId</MudTd>
+            <MudTd DataLabel="VenueId">@context.VenueId</MudTd>
+            <MudTd DataLabel="Actions" Style="text-align: right">
+                @if (_canEditLessons || _canDeleteLessons)
+                    {
+                    <MudMenu Label="@_localizer["Actions"]" Variant="Variant.Filled" DisableElevation="true" EndIcon="@Icons.Filled.KeyboardArrowDown" IconColor="Color.Secondary" Direction="Direction.Left" OffsetX="true">
+                        @if (_canEditLessons)
+                            {
+                            <MudMenuItem @onclick="@(() => InvokeModal(@context.Id))">@_localizer["Edit"]</MudMenuItem>
+                            }
+                        @if (_canDeleteLessons)
+                            {
+                            <MudMenuItem @onclick="@(() => Delete(@context.Id))">@_localizer["Delete"]</MudMenuItem>
+                            }
+                    </MudMenu>
+                    }
+                    else
+                    {
+                    <MudButton Variant="Variant.Filled"
+                               DisableElevation="true"
+                               StartIcon="@Icons.Material.Filled.DoNotTouch"
+                               IconColor="Color.Secondary"
+                               Size="Size.Small"
+                               Color="Color.Surface">
+                        @_localizer["No Allowed Actions"]
+                    </MudButton>
+                    }
+            </MudTd>
+        </RowTemplate>
+        <FooterContent>
+            <MudSwitch @bind-Checked="@_dense" Color="Color.Secondary" Style="margin-left: 5px;">@_localizer["Dense"]</MudSwitch>
+            <MudSwitch @bind-Checked="@_striped" Color="Color.Tertiary" Style="margin-left: 5px;">@_localizer["Striped"]</MudSwitch>
+            <MudSwitch @bind-Checked="@_bordered" Color="Color.Warning" Style="margin-left: 5px;">@_localizer["Bordered"]</MudSwitch>
+        </FooterContent>
+        <PagerContent>
+            <TablePager />
+        </PagerContent>
+    </MudTable>
+}

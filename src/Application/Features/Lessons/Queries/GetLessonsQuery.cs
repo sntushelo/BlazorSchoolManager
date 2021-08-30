@@ -38,7 +38,6 @@ namespace BlazorSchoolManager.Application.Features.Lessons.Queries
             _unitOfWork = unitOfWork;
         }
 
-
         public async Task<PaginatedResult<GetLessonsResponsePaged>> Handle(GetLessonsQuery request, CancellationToken cancellationToken)
         {
             if (request.OrderBy?.Any() != true)

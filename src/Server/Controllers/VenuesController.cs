@@ -20,8 +20,8 @@ namespace BlazorSchoolManager.Server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(int pageNumber, int pageSize, string searchString, string orderBy = null)
         {
-            var products = await _mediator.Send(new GetVenuesQuery(pageNumber, pageSize, searchString, orderBy));
-            return Ok(products);
+            var venues = await _mediator.Send(new GetVenuesQuery(pageNumber, pageSize, searchString, orderBy));
+            return Ok(venues);
         }
 
         /**
