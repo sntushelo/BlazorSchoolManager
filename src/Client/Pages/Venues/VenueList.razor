@@ -4,6 +4,7 @@
 @using BlazorSchoolManager.Shared.Constants.Application;
 @using Microsoft.AspNetCore.SignalR.Client;
 @using System.Security.Claims;
+@inherits BaseListComponent;
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages.Venues.VenueList> _localizer
 @inject IVenueManager VenueManager
 <style>
@@ -17,29 +18,15 @@
 
     private IEnumerable<GetVenuesResponsePaged> _pagedData;
     private MudTable<GetVenuesResponsePaged> _table;
-    private int _totalItems;
-    private int _currentPage;
-    private string _searchString = "";
-    private bool _dense = false;
-    private bool _striped = true;
-    private bool _bordered = false;
-
-    private ClaimsPrincipal _currentUser;
-    private bool _canCreateVenues;
-    private bool _canEditVenues;
-    private bool _canDeleteVenues;
-    private bool _canExportVenues;
-    private bool _canSearchVenues;
-    private bool _loaded;
 
     protected override async Task OnInitializedAsync()
     {
         _currentUser = await _authenticationManager.CurrentUser();
-        _canCreateVenues = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Create)).Succeeded;
-        _canEditVenues = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Edit)).Succeeded;
-        _canDeleteVenues = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Delete)).Succeeded;
-        _canExportVenues = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Export)).Succeeded;
-        _canSearchVenues = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Search)).Succeeded;
+        _canCreate = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Create)).Succeeded;
+        _canEdit = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Edit)).Succeeded;
+        _canDelete = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Delete)).Succeeded;
+        _canExport = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Export)).Succeeded;
+        _canSearch = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Search)).Succeeded;
 
         _loaded = true;
         HubConnection = HubConnection.TryInitialize(_navigationManager);
@@ -92,6 +79,16 @@
 
     private async Task ExportToExcel()
     {
+        var message = string.IsNullOrWhiteSpace(_searchString)
+                ? _localizer["Venues exported"]
+                : _localizer["Filtered Venues exported"];
+
+        await ExportToExcel(VenueManager, nameof(Venues), message);
+    }
+
+    /**
+    private async Task ExportToExcel()
+    {
         var response = await VenueManager.ExportToExcelAsync(_searchString);
         if (response.Succeeded)
         {
@@ -112,7 +109,7 @@
                 _snackBar.Add(message, Severity.Error);
             }
         }
-    }
+    }**/
 
     private async Task InvokeModal(int id = 0)
     {
@@ -144,14 +141,7 @@
 
     private async Task Delete(int id)
     {
-        string deleteContent = _localizer["Delete Content"];
-        var parameters = new DialogParameters
-    {
-                {nameof(Shared.Dialogs.DeleteConfirmation.ContentText), string.Format(deleteContent, id)}
-            };
-        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true };
-        var dialog = _dialogService.Show<Shared.Dialogs.DeleteConfirmation>(_localizer["Delete"], parameters, options);
-        var result = await dialog.Result;
+        var result = await GetDialogData(id, _dialogService, _localizer["Delete"], _localizer["Delete Content"]);
         if (!result.Cancelled)
         {
             var response = await VenueManager.DeleteAsync(id);
@@ -183,11 +173,11 @@ else
     <MudTable Elevation="25" ServerData="@(new Func<TableState, Task<TableData<GetVenuesResponsePaged>>>(ServerReload))" Hover="true" Dense="@_dense" Bordered="@_bordered" Striped="@_striped" @ref="_table">
         <ToolBarContent>
             <div class="justify-center mud-text-align-center">
-                @if (_canCreateVenues)
+                @if (_canCreate)
                 {
                     <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" @onclick="@(() => InvokeModal(0))" StartIcon="@Icons.Material.Filled.Add" IconColor="Color.Surface">@_localizer["Create"]</MudButton>
                     <MudButton DisableElevation Variant="Variant.Filled" OnClick="@(() => OnSearch(""))" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Surface" Color="Color.Secondary">@_localizer["Reload"]</MudButton>
-                    @if (_canExportVenues)
+                    @if (_canExport)
                     {
                         <MudButton DisableElevation Variant="Variant.Filled" OnClick="ExportToExcel" StartIcon="@Icons.Custom.FileFormats.FileExcel" IconColor="Color.Secondary" Color="Color.Surface" Style="margin-left: 5px;">@_localizer["Export"]</MudButton>
                     }
@@ -195,14 +185,14 @@ else
                 else
                 {
                     <MudButton DisableElevation Variant="Variant.Filled" OnClick="@(() => OnSearch(""))" StartIcon="@Icons.Material.Filled.Refresh" IconColor="Color.Surface" Color="Color.Secondary">@_localizer["Reload"]</MudButton>
-                    @if (_canExportVenues)
+                    @if (_canExport)
                     {
                         <MudButton DisableElevation Variant="Variant.Filled" OnClick="ExportToExcel" StartIcon="@Icons.Custom.FileFormats.FileExcel" IconColor="Color.Secondary" Color="Color.Surface" Style="margin-left: 5px;">@_localizer["Export"]</MudButton>
                     }
                 }
             </div>
             <MudToolBarSpacer />
-            @if (_canSearchVenues)
+            @if (_canSearch)
             {
                 <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="@_localizer["Search"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             }
@@ -226,14 +216,14 @@ else
             <MudTd DataLabel="Capacity">@context.Capacity</MudTd>
             <MudTd DataLabel="IsOnline">@context.IsOnline</MudTd>
             <MudTd DataLabel="Actions" Style="text-align: right">
-                @if (_canEditVenues || _canDeleteVenues)
+                @if (_canEdit || _canDelete)
                     {
                     <MudMenu Label="@_localizer["Actions"]" Variant="Variant.Filled" DisableElevation="true" EndIcon="@Icons.Filled.KeyboardArrowDown" IconColor="Color.Secondary" Direction="Direction.Left" OffsetX="true">
-                        @if (_canEditVenues)
+                        @if (_canEdit)
                             {
                             <MudMenuItem @onclick="@(() => InvokeModal(@context.Id))">@_localizer["Edit"]</MudMenuItem>
                             }
-                        @if (_canDeleteVenues)
+                        @if (_canDelete)
                             {
                             <MudMenuItem @onclick="@(() => Delete(@context.Id))">@_localizer["Delete"]</MudMenuItem>
                             }
