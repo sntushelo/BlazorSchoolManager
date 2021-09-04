@@ -42,17 +42,17 @@ namespace BlazorSchoolManager.Application.Features.Attendance.Queries
         {
             if (request.OrderBy?.Any() != true)
             {
-                return await _unitOfWork.Repository<Venue>()
+                return await _unitOfWork.Repository<Domain.Entities.Attendance>()
                     .Entities
-                    .Select(v => VenueConverter.ToModel(v))
+                    .Select(v => AttendanceConverter.ToModel(v))
                     .ToPaginatedListAsync(request.PageNumber, request.PageSize);
             }
             
             var ordering = string.Join(",", request.OrderBy); // of the form fieldname [ascending|descending], ...
-            return await _unitOfWork.Repository<Venue>()
+            return await _unitOfWork.Repository<Domain.Entities.Attendance>()
                 .Entities
                 .OrderBy(ordering) // require system.linq.dynamic.core
-                .Select(v => VenueConverter.ToModel(v))
+                .Select(v => AttendanceConverter.ToModel(v))
                 .ToPaginatedListAsync(request.PageNumber, request.PageSize);
         }
     }

@@ -1,29 +1,27 @@
-﻿using BlazorSchoolManager.Domain.Entities;
-
-namespace BlazorSchoolManager.Application.Features.Attendance.Queries
+﻿namespace BlazorSchoolManager.Application.Features.Attendance.Queries
 {
-    public static class VenueConverter
+    public static class AttendanceConverter
     {
-        public static GetAttendanceResponsePaged ToModel(Venue entity)
+        public static GetAttendanceResponsePaged ToModel(Domain.Entities.Attendance entity)
         {
             if (entity == null) return null;
 
             return new GetAttendanceResponsePaged()
             {
                 Id = entity.Id,
-                Name = entity.Name,
-                Description = entity.Description,
-                Capacity = entity.Capacity,
-                IsOnline = entity.IsOnline
+                LessonId = entity.LessonId,
+                StudentId = entity.StudentId,
+                IsPresent = entity.IsPresent,
+                IsLate = entity.IsLate
             };
         }
 
-        public static void ToEntity(GetAttendanceResponsePaged model, Venue entity)
+        public static void ToEntity(GetAttendanceResponsePaged model, Domain.Entities.Attendance entity)
         {
-            entity.Name = model.Name;
-            entity.Description = model.Description;
-            entity.Capacity = model.Capacity;
-            entity.IsOnline = model.IsOnline;
+            entity.LessonId = model.LessonId;
+            entity.StudentId = model.StudentId;
+            entity.IsPresent = model.IsPresent;
+            entity.IsLate = model.IsLate;
         }
     }
 }

@@ -4,6 +4,16 @@
         <name>BlazorSchoolManager.Server</name>
     </assembly>
     <members>
+        <member name="M:BlazorSchoolManager.Server.Controllers.AttendancesController.GetAll(System.Int32,System.Int32,System.String,System.String)">
+            <summary>
+            Get All Attendance
+            </summary>
+            <param name="pageNumber"></param>
+            <param name="pageSize"></param>
+            <param name="searchString"></param>
+            <param name="orderBy"></param>
+            <returns>Status 200 OK</returns>
+        </member>
         <member name="T:BlazorSchoolManager.Server.Controllers.BaseApiController`1">
             <summary>
             Abstract BaseApi Controller Class
@@ -205,6 +215,16 @@
         <member name="M:BlazorSchoolManager.Server.Controllers.LessonsController.GetAll(System.Int32,System.Int32,System.String,System.String)">
             <summary>
             Get All Lessons
+            </summary>
+            <param name="pageNumber"></param>
+            <param name="pageSize"></param>
+            <param name="searchString"></param>
+            <param name="orderBy"></param>
+            <returns>Status 200 OK</returns>
+        </member>
+        <member name="M:BlazorSchoolManager.Server.Controllers.StudentsController.GetAll(System.Int32,System.Int32,System.String,System.String)">
+            <summary>
+            Get All Students
             </summary>
             <param name="pageNumber"></param>
             <param name="pageSize"></param>
