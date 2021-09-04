@@ -26,6 +26,9 @@ namespace BlazorSchoolManager.Infrastructure.Extensions
         {
             return services
                 .AddTransient(typeof(IRepositoryAsync<,>), typeof(RepositoryAsync<,>))
+                .AddTransient<IStudentRepository, StudentRepository>()
+                .AddTransient<ITeacherRepository, TeacherRepository>()
+                .AddTransient<IAttendanceRepository, AttendanceRepository>()
                 .AddTransient<IVenueRepository, VenueRepository>()
                 .AddTransient<ILessonRepository, LessonRepository>()
                 .AddTransient<IProductRepository, ProductRepository>()
