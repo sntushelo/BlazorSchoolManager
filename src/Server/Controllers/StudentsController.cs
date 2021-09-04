@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 
 namespace BlazorSchoolManager.Server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     public class StudentsController : BaseApiController<StudentsController>
     {
         /// <summary>

@@ -200,15 +200,16 @@ else
         </ToolBarContent>
         <HeaderContent>
             <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Id">@_localizer["Id"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Name">@_localizer["Name"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Capacity">@_localizer["Capacity"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="FirstName">@_localizer["FirstName"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="LastName">@_localizer["LastName"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Age">@_localizer["Age"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Gender">@_localizer["Gender"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Description">@_localizer["Description"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="IsOnline">@_localizer["IsOnline"]</MudTableSortLabel></MudTh>
             <MudTh Style="text-align:right">@_localizer["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Id">@context.Id</MudTd>
-            <MudTd DataLabel="Name">
+            <MudTd DataLabel="FullName">
                 <MudHighlighter Text="@context.FullName" HighlightedText="@_searchString" />
             </MudTd>
             <MudTd DataLabel="Description">
