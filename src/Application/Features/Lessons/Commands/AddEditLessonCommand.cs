@@ -22,6 +22,7 @@ namespace BlazorSchoolManager.Application.Features.Lessons.Commands
         public string Name { get; set; }
         [Required]
         public string Description { get; set; }
+        public string ImageDataURL { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int StartTime { get; set; }

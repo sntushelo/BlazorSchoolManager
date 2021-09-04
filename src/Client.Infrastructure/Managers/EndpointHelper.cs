@@ -18,7 +18,7 @@ namespace BlazorSchoolManager.Client.Infrastructure.Managers
 
         public static string GetImage(string controlerName, int id) => $"{BASE_API_URL}/{controlerName}/image/{id}";
 
-        public static string GetAllPaged(string controlerName, int pageNumber, int pageSize, string searchString, string[] orderBy)
+        public static string GetAllPaged(string controlerName, string pageNumber, string pageSize, string searchString, string[] orderBy)
         {
             var url = $"{BASE_API_URL}/{controlerName}?pageNumber={pageNumber}&pageSize={pageSize}&searchString={searchString}&orderBy=";
             if (orderBy?.Any() == true)

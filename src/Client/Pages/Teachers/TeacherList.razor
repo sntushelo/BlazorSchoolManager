@@ -1,12 +1,12 @@
-﻿@page "/venues"
-@using BlazorSchoolManager.Application.Features.Venues.Queries;
-@using BlazorSchoolManager.Application.Features.Venues.Commands;
+﻿@page "/teachers"
+@using BlazorSchoolManager.Application.Features.Teachers.Queries;
+@using BlazorSchoolManager.Application.Features.Teachers.Commands;
 @using BlazorSchoolManager.Shared.Constants.Application;
 @using Microsoft.AspNetCore.SignalR.Client;
 @using System.Security.Claims;
 @inherits BaseListComponent;
-@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages.Venues.VenueList> _localizer;
-@inject IVenueManager VenueManager
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages.Teachers.TeacherList> _localizer;
+@inject ITeacherManager TeacherManager;
 <style>
     .mud-table-container {
         overflow: auto;
@@ -16,17 +16,17 @@
 @code {
     [CascadingParameter] private HubConnection HubConnection { get; set; }
 
-    private IEnumerable<GetVenuesResponsePaged> _pagedData;
-    private MudTable<GetVenuesResponsePaged> _table;
+    private IEnumerable<GetTeachersResponsePaged> _pagedData;
+    private MudTable<GetTeachersResponsePaged> _table;
 
     protected override async Task OnInitializedAsync()
     {
         _currentUser = await _authenticationManager.CurrentUser();
-        _canCreate = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Create)).Succeeded;
-        _canEdit = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Edit)).Succeeded;
-        _canDelete = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Delete)).Succeeded;
-        _canExport = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Export)).Succeeded;
-        _canSearch = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Venues.Search)).Succeeded;
+        _canCreate = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Teachers.Create)).Succeeded;
+        _canEdit = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Teachers.Edit)).Succeeded;
+        _canDelete = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Teachers.Delete)).Succeeded;
+        _canExport = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Teachers.Export)).Succeeded;
+        _canSearch = (await _authorizationService.AuthorizeAsync(_currentUser, Permissions.Teachers.Search)).Succeeded;
 
         _loaded = true;
         HubConnection = HubConnection.TryInitialize(_navigationManager);
@@ -36,14 +36,14 @@
         }
     }
 
-    private async Task<TableData<GetVenuesResponsePaged>> ServerReload(TableState state)
+    private async Task<TableData<GetTeachersResponsePaged>> ServerReload(TableState state)
     {
         if (!string.IsNullOrWhiteSpace(_searchString))
         {
             state.Page = 0;
         }
         await LoadData(state.Page, state.PageSize, state);
-        return new TableData<GetVenuesResponsePaged> { TotalItems = _totalItems, Items = _pagedData };
+        return new TableData<GetTeachersResponsePaged> { TotalItems = _totalItems, Items = _pagedData };
     }
 
     private async Task LoadData(int pageNumber, int pageSize, TableState state)
@@ -54,8 +54,8 @@
             orderings = state.SortDirection != SortDirection.None ? new[] { $"{state.SortLabel} {state.SortDirection}" } : new[] { $"{state.SortLabel}" };
         }
 
-        var request = new GetVenuesRequest { PageSize = pageSize, PageNumber = pageNumber + 1, SearchString = _searchString, Orderby = orderings };
-        var response = await VenueManager.GetAsync(request);
+        var request = new GetTeachersRequest { PageSize = pageSize, PageNumber = pageNumber + 1, SearchString = _searchString, Orderby = orderings };
+        var response = await TeacherManager.GetAsync(request);
         if (response.Succeeded)
         {
             _totalItems = response.TotalCount;
@@ -80,27 +80,27 @@
     private async Task ExportToExcel()
     {
         var message = string.IsNullOrWhiteSpace(_searchString)
-                ? _localizer["Venues exported"]
-                : _localizer["Filtered Venues exported"];
+                ? _localizer["Teachers exported"]
+                : _localizer["Filtered Teachers exported"];
 
-        await ExportToExcel(VenueManager, nameof(Venues), message);
+        await ExportToExcel(TeacherManager, nameof(Teachers), message);
     }
 
     /**
     private async Task ExportToExcel()
     {
-        var response = await VenueManager.ExportToExcelAsync(_searchString);
+        var response = await TeacherManager.ExportToExcelAsync(_searchString);
         if (response.Succeeded)
         {
             await _jsRuntime.InvokeVoidAsync("Download", new
             {
                 ByteArray = response.Data,
-                FileName = $"{nameof(Venues).ToLower()}_{DateTime.Now:ddMMyyyyHHmmss}.xlsx",
+                FileName = $"{nameof(Teachers).ToLower()}_{DateTime.Now:ddMMyyyyHHmmss}.xlsx",
                 MimeType = ApplicationConstants.MimeTypes.OpenXml
             });
             _snackBar.Add(string.IsNullOrWhiteSpace(_searchString)
-                ? _localizer["Venues exported"]
-                : _localizer["Filtered Venues exported"], Severity.Success);
+                ? _localizer["Teachers exported"]
+                : _localizer["Filtered Teachers exported"], Severity.Success);
         }
         else
         {
@@ -116,22 +116,23 @@
         var parameters = new DialogParameters();
         if (id != 0)
         {
-            var venue = _pagedData.FirstOrDefault(c => c.Id == id);
-            if (venue != null)
+            var teacher = _pagedData.FirstOrDefault(c => c.Id == id);
+            if (teacher != null)
             {
-                //parameters.Add(nameof(AddEditVenueModal.AddEditVenueModel), new AddEditVenueCommand
-                parameters.Add(nameof(AddEditVenueModal), new AddEditVenueCommand
+                //parameters.Add(nameof(AddEditTeacherModal.AddEditTeacherModel), new AddEditTeacherCommand
+                parameters.Add(nameof(AddEditTeacherModal), new AddEditTeacherCommand
                 {
-                    Id = venue.Id,
-                    Name = venue.Name,
-                    Description = venue.Description,
-                    Capacity = venue.Capacity,
-                    IsOnline = venue.IsOnline
+                    Id = teacher.Id,
+                    FirstName = teacher.FirstName,
+                    LastName = teacher.LastName,
+                    Description = teacher.Description,
+                    Age = teacher.Age,
+                    Gender = teacher.Gender
                 });
             }
         }
         var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true, DisableBackdropClick = true };
-        var dialog = _dialogService.Show<AddEditVenueModal>(id == 0 ? _localizer["Create"] : _localizer["Edit"], parameters, options);
+        var dialog = _dialogService.Show<AddEditTeacherModal>(id == 0 ? _localizer["Create"] : _localizer["Edit"], parameters, options);
         var result = await dialog.Result;
         if (!result.Cancelled)
         {
@@ -144,7 +145,7 @@
         var result = await GetDialogData(id, _dialogService, _localizer["Delete"], _localizer["Delete Content"]);
         if (!result.Cancelled)
         {
-            var response = await VenueManager.DeleteAsync(id);
+            var response = await TeacherManager.DeleteAsync(id);
             if (response.Succeeded)
             {
                 OnSearch("");
@@ -163,14 +164,14 @@
     }
 }
 
-<HeroTitle Title="@_localizer["Venues"]" Description="@_localizer["Manage Venues."]" />
+<HeroTitle Title="@_localizer["Teachers"]" Description="@_localizer["Manage Teachers."]" />
 @if (!_loaded)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
 }
 else
 {
-    <MudTable Elevation="25" ServerData="@(new Func<TableState, Task<TableData<GetVenuesResponsePaged>>>(ServerReload))" Hover="true" Dense="@_dense" Bordered="@_bordered" Striped="@_striped" @ref="_table">
+    <MudTable Elevation="25" ServerData="@(new Func<TableState, Task<TableData<GetTeachersResponsePaged>>>(ServerReload))" Hover="true" Dense="@_dense" Bordered="@_bordered" Striped="@_striped" @ref="_table">
         <ToolBarContent>
             <div class="justify-center mud-text-align-center">
                 @if (_canCreate)
@@ -198,23 +199,23 @@ else
             }
         </ToolBarContent>
         <HeaderContent>
-            <MudTh><MudTableSortLabel T="GetVenuesResponsePaged" SortLabel="Id">@_localizer["Id"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="GetVenuesResponsePaged" SortLabel="Name">@_localizer["Name"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="GetVenuesResponsePaged" SortLabel="Capacity">@_localizer["Capacity"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="GetVenuesResponsePaged" SortLabel="Description">@_localizer["Description"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="GetVenuesResponsePaged" SortLabel="IsOnline">@_localizer["IsOnline"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Id">@_localizer["Id"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Name">@_localizer["Name"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Capacity">@_localizer["Capacity"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="Description">@_localizer["Description"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="GetTeachersResponsePaged" SortLabel="IsOnline">@_localizer["IsOnline"]</MudTableSortLabel></MudTh>
             <MudTh Style="text-align:right">@_localizer["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Id">@context.Id</MudTd>
             <MudTd DataLabel="Name">
-                <MudHighlighter Text="@context.Name" HighlightedText="@_searchString" />
+                <MudHighlighter Text="@context.FullName" HighlightedText="@_searchString" />
             </MudTd>
             <MudTd DataLabel="Description">
                 <MudHighlighter Text="@context.Description" HighlightedText="@_searchString" />
             </MudTd>
-            <MudTd DataLabel="Capacity">@context.Capacity</MudTd>
-            <MudTd DataLabel="IsOnline">@context.IsOnline</MudTd>
+            <MudTd DataLabel="Age">@context.Age</MudTd>
+            <MudTd DataLabel="Gender">@context.Gender</MudTd>
             <MudTd DataLabel="Actions" Style="text-align: right">
                 @if (_canEdit || _canDelete)
                     {

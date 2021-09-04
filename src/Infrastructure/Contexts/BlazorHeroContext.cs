@@ -27,6 +27,11 @@ namespace BlazorSchoolManager.Infrastructure.Contexts
         }
 
         public DbSet<ChatHistory<BlazorHeroUser>> ChatHistories { get; set; }
+        //TODO: Update DbSet to use plural names
+        public DbSet<Attendance> Attendance { get; set; }
+        public DbSet<StudentLesson> StudentLesson { get; set; }
+        public DbSet<Student> Student { get; set; }
+        public DbSet<Teacher> Teacher { get; set; }
         public DbSet<Lesson> Lesson { get; set; }
         public DbSet<Venue> Venue { get; set; }
         public DbSet<Product> Products { get; set; }

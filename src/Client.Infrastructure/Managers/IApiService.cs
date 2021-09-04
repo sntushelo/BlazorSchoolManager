@@ -9,6 +9,7 @@ namespace BlazorSchoolManager.Client.Infrastructure.Managers
 {
     public interface ISharedApiService : IManager
     {
+        Task<IResult<int>> SaveAsync(IRequest<Result<int>> request);
         Task<IResult<int>> DeleteAsync(int id);
         Task<IResult<string>> ExportToExcelAsync(string searchString = "");
         Task<IResult<string>> GetImageAsync(int id);

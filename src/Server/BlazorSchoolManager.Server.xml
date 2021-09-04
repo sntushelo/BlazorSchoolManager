@@ -212,6 +212,16 @@
             <param name="orderBy"></param>
             <returns>Status 200 OK</returns>
         </member>
+        <member name="M:BlazorSchoolManager.Server.Controllers.TeachersController.GetAll(System.Int32,System.Int32,System.String,System.String)">
+            <summary>
+            Get All Venues
+            </summary>
+            <param name="pageNumber"></param>
+            <param name="pageSize"></param>
+            <param name="searchString"></param>
+            <param name="orderBy"></param>
+            <returns>Status 200 OK</returns>
+        </member>
         <member name="M:BlazorSchoolManager.Server.Controllers.Utilities.AuditsController.GetUserTrailsAsync">
             <summary>
             Get Current User Audit Trails

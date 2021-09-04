@@ -6,6 +6,16 @@ namespace BlazorSchoolManager.Shared.Constants.Permission
 {
     public static class Permissions
     {
+        public static class Teachers
+        {
+            public const string View = "Permissions.Teachers.View";
+            public const string Create = "Permissions.Teachers.Create";
+            public const string Edit = "Permissions.Teachers.Edit";
+            public const string Delete = "Permissions.Teachers.Delete";
+            public const string Export = "Permissions.Teachers.Export";
+            public const string Search = "Permissions.Teachers.Search";
+        }
+
         public static class Venues
         {
             public const string View = "Permissions.Venues.View";
