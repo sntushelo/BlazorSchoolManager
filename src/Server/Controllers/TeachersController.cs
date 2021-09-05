@@ -9,7 +9,7 @@ namespace BlazorSchoolManager.Server.Controllers
     public class TeachersController : BaseApiController<TeachersController>
     {
         /// <summary>
-        /// Get All Venues
+        /// Get All Teachers
         /// </summary>
         /// <param name="pageNumber"></param>
         /// <param name="pageSize"></param>
@@ -20,8 +20,8 @@ namespace BlazorSchoolManager.Server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(int pageNumber, int pageSize, string searchString, string orderBy = null)
         {
-            var venues = await _mediator.Send(new GetTeachersQuery(pageNumber, pageSize, searchString, orderBy));
-            return Ok(venues);
+            var teachers = await _mediator.Send(new GetTeachersQuery(pageNumber, pageSize, searchString, orderBy));
+            return Ok(teachers);
         }
     }
 }

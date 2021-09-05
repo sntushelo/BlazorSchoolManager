@@ -234,7 +234,7 @@
         </member>
         <member name="M:BlazorSchoolManager.Server.Controllers.TeachersController.GetAll(System.Int32,System.Int32,System.String,System.String)">
             <summary>
-            Get All Venues
+            Get All Teachers
             </summary>
             <param name="pageNumber"></param>
             <param name="pageSize"></param>

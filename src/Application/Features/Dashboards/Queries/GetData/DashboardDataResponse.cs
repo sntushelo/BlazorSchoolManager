@@ -4,6 +4,7 @@ namespace BlazorSchoolManager.Application.Features.Dashboards.Queries.GetData
 {
     public class DashboardDataResponse
     {
+        public int StudentCount { get; set; }
         public int TeacherCount { get; set; }
         public int LessonCount { get; set; }
         public int VenueCount { get; set; }

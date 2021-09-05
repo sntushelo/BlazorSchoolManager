@@ -15,6 +15,7 @@ namespace BlazorSchoolManager.Client.Pages.Content
         [Inject] private IDashboardManager DashboardManager { get; set; }
 
         [CascadingParameter] private HubConnection HubConnection { get; set; }
+        [Parameter] public int StudentCount { get; set; }
         [Parameter] public int TeacherCount { get; set; }
         [Parameter] public int LessonCount { get; set; }
         [Parameter] public int VenueCount { get; set; }
@@ -50,6 +51,7 @@ namespace BlazorSchoolManager.Client.Pages.Content
             var response = await DashboardManager.GetDataAsync();
             if (response.Succeeded)
             {
+                StudentCount = response.Data.StudentCount;
                 TeacherCount = response.Data.TeacherCount;
                 LessonCount = response.Data.LessonCount;
                 VenueCount = response.Data.VenueCount;

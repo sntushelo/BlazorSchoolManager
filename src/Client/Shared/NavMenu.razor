@@ -124,6 +124,7 @@
     private bool _canViewBrands;
     private bool _canViewVenues;
     private bool _canViewTeachers;
+    private bool _canViewStudents;
     private bool _canViewLessons;
 
     protected override async Task OnParametersSetAsync()
@@ -141,6 +142,7 @@
         _canViewBrands = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Brands.View)).Succeeded;
         _canViewVenues = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Venues.View)).Succeeded;
         _canViewTeachers = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Teachers.View)).Succeeded;
+        _canViewStudents = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Students.View)).Succeeded;
         _canViewLessons = (await _authorizationService.AuthorizeAsync(_authenticationStateProviderUser, Permissions.Lessons.View)).Succeeded;
     }
 }
